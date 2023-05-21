@@ -13,7 +13,7 @@ def menu():
 def new_note():
     title_note = input("Título de la nota: ")
     content_note = input("Nota: ")
-    date_now = datetime.datetime.now()
+    date_now = datetime.datetime.now().date()
     return title_note, content_note, date_now
 
 def save_note(title_note, content_note, date_now):
@@ -32,6 +32,16 @@ def read_notes():
             i+=1
             title = notes[0]
             print(f"{i}- {title}")
+
+def show_note():
+
+    opc = input("Elija el nº de la nota a mostrar: ")
+
+    with open("notas.csv", "r") as doc:
+        read_csv = csv.reader(doc)
+
+        for notes in read_csv:
+
 
 # Programa principal
 
