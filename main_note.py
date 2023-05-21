@@ -91,6 +91,48 @@ def delete_note():
     except ValueError:
         print("Ingrese una opción válida (número) o 'x' para volver.") 
 
+def edit_notes():
+    print("x- volver")
+    opc = input("Elija una opción a editar: ")
+
+    with open("notas.csv", "r") as doc:
+        reader_notes = csv.reader(doc)
+        lines = list(reader_notes)
+
+    if opc.lower() == "x":
+        return
+
+    try:
+        if int(opc) < 1 or int(opc) > len(lines):
+            print("Escoja una opción válida...")
+            return
+
+        note_to_edit = lines[int(opc) - 1]
+        actual_title = note_to_edit[0]
+        actual_content = note_to_edit[1]
+
+        print("---EDITANDO NOTA---")
+        print(f"Título actual: {actual_title}")
+        print(f"Contenido actual: {actual_content}")
+
+        new_title = input(f"Nuevo título [{actual_title}]: ")
+        new_content = input(f"Nuevo contenido [{actual_content}]: ")
+
+        if not new_content and not new_title:
+            new_content = actual_content
+            new_title = actual_title
+
+        note_to_edit[0] = new_title
+        note_to_edit[1] = new_content
+
+        with open("notas.csv", "w", newline="") as doc:
+            writer = csv.writer(doc)
+            writer.writerows(lines)
+
+        print("Se guardó con éxito la nota...")
+
+    except ValueError:
+        print("Ingrese una opción válida (número) o 'x' para volver.")
 
 # Programa principal
 
@@ -107,7 +149,8 @@ while True:
         show_note()
         input("Presione [ENTER] para continuar...")
     elif answ == "3":
-        print("In progress...")
+        read_notes()
+        edit_notes()
         input("Presione [ENTER] para continuar...")
     elif answ == "4":
         read_notes()
