@@ -7,8 +7,8 @@ def menu():
     print("/// MENU ///")
     print("1- Crear nota")
     print("2- Ver Notas")
-    print("3- Borrar Nota")
-    print("4- Ver nota")
+    print("3- Editar nota")
+    print("4- Borrar Nota")
 
 def new_note():
     title_note = input("Título de la nota: ")
@@ -35,13 +35,16 @@ def read_notes():
 
 def show_note():
 
+    print("4- Volver")
     opc = input("Elija el nº de la nota a mostrar: ")
 
     with open("notas.csv", "r") as doc:
         read_csv = csv.reader(doc)
         linea = list(read_csv)
 
-        if int(opc)<1 or int(opc)>len(linea):
+        if opc == "4":
+            return
+        elif int(opc)<1 or int(opc)>len(linea):
             print("Seleccione una opción válida.")
             return
         
@@ -53,7 +56,6 @@ def show_note():
         print(f"Título: {title}")
         print(f"Nota: {content}")
         print(f"Fecha: {date}")
-
 
 
 # Programa principal
