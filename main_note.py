@@ -36,17 +36,23 @@ def read_notes():
 def show_note():
 
     opc = input("Elija el nº de la nota a mostrar: ")
+
     with open("notas.csv", "r") as doc:
         read_csv = csv.reader(doc)
         linea = list(read_csv)
-        for notes in read_csv:
-            title = notes[0]
-            content = notes [1]
-            date = notes [2]
-        if linea is not None:
-            print(f"Título: {title}")
-            print(f"Nota: {content}")
-            print(f"Fecha: {date}")
+
+        if int(opc)<1 or int(opc)>len(linea):
+            print("Seleccione una opción válida.")
+            return
+        
+        linea_chose = linea[int(opc)-1]
+        title = linea_chose [0]
+        content = linea_chose[1]
+        date = linea_chose[2]
+
+        print(f"Título: {title}")
+        print(f"Nota: {content}")
+        print(f"Fecha: {date}")
 
 
 
@@ -62,6 +68,7 @@ while True:
         input("Presione [ENTER] para continuar...")
     elif answ == "2":
         read_notes()
+        show_note()
         input("Presione [ENTER] para continuar...")
     elif answ == "3":
         print("In progress...")
