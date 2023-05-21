@@ -118,9 +118,10 @@ def edit_notes():
         new_title = input(f"Nuevo título [{actual_title}]: ")
         new_content = input(f"Nuevo contenido [{actual_content}]: ")
 
-        if not new_content and not new_title:
-            new_content = actual_content
+        if not new_title:
             new_title = actual_title
+        if not new_content:
+            new_content = actual_content
 
         note_to_edit[0] = new_title
         note_to_edit[1] = new_content
