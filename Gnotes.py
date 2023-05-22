@@ -1,6 +1,7 @@
 import datetime
 import csv
 import sqlite3
+import re
 
 conn = sqlite3.connect('GNotesBD.db')
 cursor = conn.cursor()
@@ -23,6 +24,27 @@ def log_in(email_is, pass_is, cursor, conn, verification):
 
     return verification
 
+def register(cursor, conn):
+    print("---REGISTRO---")
+    email = input("Ingrese su email: ")
+    cursor.execute('SELECT * FROM users WHERE Email = ?', (email,))
+    user = cursor.fetchone()
+
+    if user is not None:
+        print("Ya existe ese correo. Verifique los datos...")
+    else:
+        password = input("Ingrese su contraseña: ")
+        username = input("Ingrese su nombre de usuario: ")
+        phone = input("Ingrese su número de teléfono empezando por el código: ")
+
+        cursor.execute('INSERT INTO users (Email, Username, Password, Phone) VALUES (?, ?, ?, ?)', (email, username, password, phone))
+
+        # Crear la tabla correspondiente al usuario registrado
+        table_name = format_table_name(email)
+        cursor.execute(f'CREATE TABLE {table_name} (Id INTEGER PRIMARY KEY, title TEXT, content TEXT, "Date" DATE)')
+        conn.commit()
+
+        print("Usuario registrado exitosamente.")
 
 def menu():
     print("/// MENU ///")
@@ -43,7 +65,6 @@ def save_note(title_note, content_note, date_now, conn, cursor):
     cursor.execute("INSERT INTO notes (title, content, date) VALUES (?, ?, ?)", (title_note, content_note, str(date_now)))
     
     conn.commit()
-    conn.close()
 
     print("Guardando nota...")
 
@@ -159,6 +180,26 @@ def edit_notes():
     except ValueError:
         print("Ingrese una opción válida (número) o 'x' para volver.")
 
+def format_table_name(email):
+    # Reemplazar los puntos en el dominio por guiones bajos
+    formatted_email = email.replace('.', '_')
+
+    # Reemplazar el carácter '@' por un guion bajo
+    formatted_email = formatted_email.replace('@', '_')
+
+    # Extraer el nombre de usuario del correo electrónico
+    match = re.match(r'([^@]+)@[^@]+\.[^@]+', formatted_email)
+    if match:
+        username = match.group(1)
+    else:
+        # Si no se encuentra una coincidencia, usar el correo electrónico completo como nombre de usuario
+        username = formatted_email
+
+    # Formar el nombre de la tabla con el prefijo "Notes_" y el nombre de usuario
+    table_name = f'Notes_{username}'
+
+    return table_name
+
 # Programa principal
 
 
@@ -205,7 +246,7 @@ while True:
                     input("Presione [ENTER] para continuar...")
 
     elif opc_m == '2':
-        break
+        register(cursor, conn)
     elif opc_m == '3':
         break
     else:
