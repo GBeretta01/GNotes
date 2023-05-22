@@ -1,7 +1,28 @@
 import datetime
 import csv
+import sqlite3
+
+conn = sqlite3.connect('GNotesBD.db')
+cursor = conn.cursor()
+verification = False
 
 # Funciones
+
+def log_in(email_is, pass_is, cursor, conn, verification):
+
+    cursor.execute('SELECT * FROM users WHERE Email = ? AND Password = ?', (email_is, pass_is))
+    user_v = cursor.fetchone()
+
+
+    if user_v is not None:
+        print("Iniciando sesión...")
+        verification = True
+    else:
+        print("Usuario o contraseñas erróneas")
+        verification = False
+
+    return verification
+
 
 def menu():
     print("/// MENU ///")
@@ -9,6 +30,7 @@ def menu():
     print("2- Ver Notas")
     print("3- Editar nota")
     print("4- Borrar Nota")
+    print("5- Cerrar sesión")
 
 def new_note():
     title_note = input("Título de la nota: ")
@@ -16,10 +38,12 @@ def new_note():
     date_now = datetime.datetime.now().date()
     return title_note, content_note, date_now
 
-def save_note(title_note, content_note, date_now):
-    with open("notas.csv", "a", newline="") as doc:
-        write_csv = csv.writer(doc)
-        write_csv.writerow([title_note, content_note, str(date_now)])
+def save_note(title_note, content_note, date_now, conn, cursor):
+    
+    cursor.execute("INSERT INTO notes (title, content, date) VALUES (?, ?, ?)", (title_note, content_note, str(date_now)))
+    
+    conn.commit()
+    conn.close()
 
     print("Guardando nota...")
 
@@ -137,26 +161,53 @@ def edit_notes():
 
 # Programa principal
 
-while True:
-    menu()
-    answ = input("\nElija una opción: ")
 
-    if answ == "1":
-        title_note, content_note, date_now = new_note()
-        save_note(title_note, content_note, date_now)
-        input("Presione [ENTER] para continuar...")
-    elif answ == "2":
-        read_notes()
-        show_note()
-        input("Presione [ENTER] para continuar...")
-    elif answ == "3":
-        read_notes()
-        edit_notes()
-        input("Presione [ENTER] para continuar...")
-    elif answ == "4":
-        read_notes()
-        delete_note()
-        input("Presione [ENTER] para continuar...")
+while True:
+    print("///GNOTES///")
+    print("1- Iniciar sesión")
+    print("2- Registrarse")
+    print("3- Salir")
+    opc_m = input("Ingrese una opción: ")
+
+    if opc_m == '1':
+        print("---INCIAR SESIÓN---")
+        email_is = input("Ingrese su email: ")
+        pass_is = input("Ingrese su contraseña: ")
+
+        verification = log_in(email_is, pass_is, cursor, conn, verification)
+
+        if verification:
+            while True:
+                menu()
+                answ = input("\nElija una opción: ")
+
+                if answ == "1":
+                    title_note, content_note, date_now = new_note()
+                    save_note(title_note, content_note, date_now, conn, cursor)
+                    input("Presione [ENTER] para continuar...")
+                elif answ == "2":
+                    read_notes()
+                    show_note()
+                    input("Presione [ENTER] para continuar...")
+                elif answ == "3":
+                    read_notes()
+                    edit_notes()
+                    input("Presione [ENTER] para continuar...")
+                elif answ == "4":
+                    read_notes()
+                    delete_note()
+                    input("Presione [ENTER] para continuar...")
+                elif answ == "5":
+                    print("Cerrando sesión...")
+                    break
+                else:
+                    print("Agregue una opción válida...")
+                    input("Presione [ENTER] para continuar...")
+
+    elif opc_m == '2':
+        break
+    elif opc_m == '3':
+        break
     else:
-        print("Agregue una opción válida...")
-        input("Presione [ENTER] para continuar...")
+        print("Ingrese una opción válida")
+        input("Presione ENTER para continuar...")
