@@ -5,24 +5,21 @@ import re
 
 conn = sqlite3.connect('GNotesBD.db')
 cursor = conn.cursor()
-verification = False
 
 # Funciones
 
-def log_in(email_is, pass_is, cursor, conn, verification):
+def log_in(email_is, pass_is, cursor):
 
     cursor.execute('SELECT * FROM users WHERE Email = ? AND Password = ?', (email_is, pass_is))
     user_v = cursor.fetchone()
 
 
-    if user_v is not None:
+    if user_v is not None and user_v[3] == pass_is:
         print("Iniciando sesión...")
-        verification = True
+        return True
     else:
         print("Usuario o contraseñas erróneas")
-        verification = False
-
-    return verification, email_is
+        return False
 
 def register(cursor, conn):
     print("---REGISTRO---")
@@ -79,7 +76,7 @@ def read_notes(cursor):
         title = row[0]
         print(f"{i}- {title}")
 
-def show_note():
+def show_note(cursor):
 
     print("x- Volver")
     opc = input("Elija el nº de la nota a mostrar: ")
@@ -114,34 +111,32 @@ def show_note():
     except ValueError:
         print("Ingrese una opción válida (número) o 'x' para volver.")
 
-def delete_note():
+def delete_note(cursor, conn):
 
     print("X- Volver")
-    opc = input("Elije una opción a borrar: ")
+    opc = input("Elije una nota a borrar: ")
 
-
-    lines = []
-    with open("notas.csv", "r") as doc:
-        reader_notes = csv.reader(doc)
-        lines = list(reader_notes)
+    table_name = format_table_name_log_in(email_is)
+    cursor.execute(f'SELECT * FROM {table_name}')
+    rows = cursor.fetchall()
 
     if opc.lower() == "x":
         return
     
     try:
+        chosen_index = int(opc) - 1
 
-        if int(opc)<1 or int(opc)>len(lines):
-            print("Escoja una opción válida...")
+        if chosen_index < 0 or chosen_index >= len(rows):
+            print("Seleccione una opción válida.")
             return
+
+        cursor.execute(f'DELETE FROM {table_name} WHERE id = {chosen_index}')
+        conn.commit()
         
-        lines.pop(int(opc) - 1)
-
-        with open("notas.csv", "w", newline="") as doc_w:
-            rewriter_csv = csv.writer(doc_w)
-            rewriter_csv.writerows(lines)
-
     except ValueError:
-        print("Ingrese una opción válida (número) o 'x' para volver.") 
+        print("Ingrese una opción válida (número) o 'x' para volver.")
+    
+
 
 def edit_notes():
     print("x- volver")
@@ -235,7 +230,7 @@ while True:
         email_is = input("Ingrese su email: ")
         pass_is = input("Ingrese su contraseña: ")
 
-        verification = log_in(email_is, pass_is, cursor, conn, verification)
+        verification = log_in(email_is, pass_is, cursor)
 
         if verification:
             while True:
@@ -249,15 +244,15 @@ while True:
                     input("Presione [ENTER] para continuar...")
                 elif answ == "2":
                     read_notes(cursor)
-                    show_note()
+                    show_note(cursor)
                     input("Presione [ENTER] para continuar...")
                 elif answ == "3":
-                    read_notes()
+                    read_notes(cursor)
                     edit_notes()
                     input("Presione [ENTER] para continuar...")
                 elif answ == "4":
-                    read_notes()
-                    delete_note()
+                    read_notes(cursor)
+                    delete_note(cursor, conn)
                     input("Presione [ENTER] para continuar...")
                 elif answ == "5":
                     print("Cerrando sesión...")
