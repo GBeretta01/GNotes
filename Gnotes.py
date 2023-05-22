@@ -22,7 +22,7 @@ def log_in(email_is, pass_is, cursor, conn, verification):
         print("Usuario o contraseñas erróneas")
         verification = False
 
-    return verification
+    return verification, email_is
 
 def register(cursor, conn):
     print("---REGISTRO---")
@@ -39,9 +39,8 @@ def register(cursor, conn):
 
         cursor.execute('INSERT INTO users (Email, Username, Password, Phone) VALUES (?, ?, ?, ?)', (email, username, password, phone))
 
-        # Crear la tabla correspondiente al usuario registrado
         table_name = format_table_name(email)
-        cursor.execute(f'CREATE TABLE {table_name} (Id INTEGER PRIMARY KEY, title TEXT, content TEXT, "Date" DATE)')
+        cursor.execute(f'CREATE TABLE {table_name} (Id INTEGER PRIMARY KEY, Title TEXT, Content TEXT, "Date" DATE)')
         conn.commit()
 
         print("Usuario registrado exitosamente.")
@@ -61,51 +60,59 @@ def new_note():
     return title_note, content_note, date_now
 
 def save_note(title_note, content_note, date_now, conn, cursor):
+
     
-    cursor.execute("INSERT INTO notes (title, content, date) VALUES (?, ?, ?)", (title_note, content_note, str(date_now)))
+    table_name = format_table_name_log_in(email_is)
+    cursor.execute(f"INSERT INTO {table_name} (title, content, date) VALUES (?, ?, ?)", (title_note, content_note, str(date_now)))
     
     conn.commit()
 
     print("Guardando nota...")
 
-def read_notes():
+def read_notes(cursor):
 
-    with open("notas.csv", "r") as doc:
-        read_csv = csv.reader(doc)
-        i=0
-        for notes in read_csv:
-            i+=1
-            title = notes[0]
-            print(f"{i}- {title}")
+    table_name = format_table_name_log_in(email_is)
+    cursor.execute(f"SELECT title FROM {table_name}")
+    rows = cursor.fetchall()
+
+    for i, row in enumerate(rows, start=1):
+        title = row[0]
+        print(f"{i}- {title}")
 
 def show_note():
 
     print("x- Volver")
     opc = input("Elija el nº de la nota a mostrar: ")
 
-    with open("notas.csv", "r") as doc:
-        read_csv = csv.reader(doc)
-        linea = list(read_csv)
+    table_name = format_table_name_log_in(email_is)
+    cursor.execute(f"SELECT * FROM {table_name}")
+    rows = cursor.fetchall()
 
-        if opc.lower() == "x":
+    for i, row in enumerate(rows, start=1):
+        title = row[1]
+        print(f"{i}- {title}")
+
+    if opc.lower() == "x":
+        return
+    
+    try:
+        chosen_index = int(opc) - 1
+
+        if chosen_index < 0 or chosen_index >= len(rows):
+            print("Seleccione una opción válida.")
             return
-        
-        try:
-            if int(opc)<1 or int(opc)>len(linea):
-                print("Seleccione una opción válida.")
-                return
-            
-            linea_chose = linea[int(opc)-1]
-            title = linea_chose [0]
-            content = linea_chose[1]
-            date = linea_chose[2]
 
-            print(f"Título: {title}")
-            print(f"Nota: {content}")
-            print(f"Fecha de creación: {date}")
+        chosen_note = rows[chosen_index]
+        title = chosen_note[1]
+        content = chosen_note[2]
+        date = chosen_note[3]
+
+        print(f"Título: {title}")
+        print(f"Nota: {content}")
+        print(f"Fecha de creación: {date}")
         
-        except ValueError:
-            print("Ingrese una opción válida (número) o 'x' para volver.")
+    except ValueError:
+        print("Ingrese una opción válida (número) o 'x' para volver.")
 
 def delete_note():
 
@@ -181,24 +188,37 @@ def edit_notes():
         print("Ingrese una opción válida (número) o 'x' para volver.")
 
 def format_table_name(email):
-    # Reemplazar los puntos en el dominio por guiones bajos
+    
     formatted_email = email.replace('.', '_')
 
-    # Reemplazar el carácter '@' por un guion bajo
     formatted_email = formatted_email.replace('@', '_')
 
-    # Extraer el nombre de usuario del correo electrónico
     match = re.match(r'([^@]+)@[^@]+\.[^@]+', formatted_email)
     if match:
         username = match.group(1)
     else:
-        # Si no se encuentra una coincidencia, usar el correo electrónico completo como nombre de usuario
         username = formatted_email
 
-    # Formar el nombre de la tabla con el prefijo "Notes_" y el nombre de usuario
     table_name = f'Notes_{username}'
 
     return table_name
+
+def format_table_name_log_in(email_is):
+
+    formatted_email = email_is.replace('.', '_')
+
+    formatted_email = formatted_email.replace('@', '_')
+
+    match = re.match(r'([^@]+)@[^@]+\.[^@]+', formatted_email)
+    if match:
+        username = match.group(1)
+    else:
+        username = formatted_email
+
+    table_name_log_in = f'Notes_{username}'
+
+    return table_name_log_in
+
 
 # Programa principal
 
@@ -219,6 +239,7 @@ while True:
 
         if verification:
             while True:
+                table_name_log_in = format_table_name_log_in(email_is)
                 menu()
                 answ = input("\nElija una opción: ")
 
@@ -227,7 +248,7 @@ while True:
                     save_note(title_note, content_note, date_now, conn, cursor)
                     input("Presione [ENTER] para continuar...")
                 elif answ == "2":
-                    read_notes()
+                    read_notes(cursor)
                     show_note()
                     input("Presione [ENTER] para continuar...")
                 elif answ == "3":
